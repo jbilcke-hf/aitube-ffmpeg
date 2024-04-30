@@ -7,8 +7,14 @@ export {
   concatenateVideos,
   concatenateVideosAndMergeAudio,
   concatenateVideosWithAudio,
+  defaultExportFormat,
   createVideoFromFrames
 } from "./concatenate"
+
+export type {
+  SupportedExportFormat,
+  ConcatenateAudioOutput
+ } from "./concatenate"
 
 export {
   convertAudioToWav,

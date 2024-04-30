@@ -82,13 +82,21 @@ export async function imageToVideoBase64({
         '-pix_fmt yuv420p'
       ])
 
-      // Apply zoompan filter only if zoom rate is greater than 0
-      if (zoomInRatePerSecond > 0) {
-        const totalZoomFactor = 1 + (zoomInRatePerSecond / 100) * durationInSeconds;
-        ffmpegCommand = ffmpegCommand.videoFilters(`zoompan=z='min(zoom+${zoomInRatePerSecond}/100,zoom*${totalZoomFactor})':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1`);
-      }
-      
+    if (zoomInRatePerSecond > 0) {
+      const zoomIncreasePerSecond = zoomInRatePerSecond / 100;
+      const totalZoomFactor = 1 + (zoomIncreasePerSecond * durationInSeconds);
+      const framesTotal = durationInSeconds * fps;
+      const zoomPerFrame = zoomIncreasePerSecond / fps;
+    
+      const zoomFormula = `if(lte(zoom\\,${totalZoomFactor}),zoom+${zoomPerFrame}\\,zoom)`;
+    
+      ffmpegCommand = ffmpegCommand.videoFilters(`zoompan=z='${zoomFormula}':d=${framesTotal}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`);
+    }
+
     return ffmpegCommand
+      .on('start', function(commandLine) {
+        console.log('imageToVideoBase64: Spawned Ffmpeg with command: ' + commandLine);
+      })
       .on('end', () => resolve())
       .on('error', (err) => reject(err))
       .save(outputFilePath);
