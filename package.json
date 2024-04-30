@@ -1,0 +1,47 @@
+{
+  "name": "@aitube/ffmpeg",
+  "module": "index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "Collection of useful FFmpeg utilities for NodeJS. Used by AiTube.at",
+  "scripts": {
+    "patch": "cp -f patch.js node_modules/fluent-ffmpeg/index.js",
+    "build": "bun run patch && bun build --target=node ./src/index.ts --outfile=dist/index.js && bun run build:declaration",
+    "build:declaration": "tsc --emitDeclarationOnly --project tsconfig.types.json",
+    "postbuild": "rimraf tsconfig.types.tsbuildinfo",
+    "publish": "npm publish --access public"
+  },
+  "devDependencies": {
+    "@types/fluent-ffmpeg": "^2.1.24",
+    "@types/uuid": "^9.0.8",
+    "bun-types": "latest",
+    "prettier": "^3.2.5",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.4.5"
+  },
+  "peerDependencies": {},
+  "dependencies": {
+    "@aitube/encoders": "^0.0.0",
+    "@aitube/io": "^0.0.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "puppeteer": "^22.7.1",
+    "uuid": "^9.0.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jbilcke-hf/aitube-ffmpeg.git"
+  },
+  "keywords": [
+    "AiTube",
+    "FFmpeg"
+  ],
+  "author": "Julian Bilcke",
+  "license": "MIT",
+  "files": [
+    "dist/*.js",
+    "dist/*.d.ts",
+    "dist/**/*.d.ts"
+  ]
+}
