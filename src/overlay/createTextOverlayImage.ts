@@ -82,8 +82,7 @@ export async function createTextOverlayImage({
       <p class="${textStyle}">
         ${text}
       </p>
-    </div>
-
+    </div><br/><br/>
   </body>
 </html>`
 
