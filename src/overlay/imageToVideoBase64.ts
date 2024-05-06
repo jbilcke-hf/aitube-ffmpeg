@@ -30,7 +30,7 @@ export async function imageToVideoBase64({
   width = 1920,
   height = 1080,
   fps = 25,
-  zoomInRatePerSecond = 0.6
+  zoomInRatePerSecond = 0.02
 }: {
   inputImageInBase64: string
   outputFilePath?: string
@@ -47,17 +47,6 @@ export async function imageToVideoBase64({
 
   outputDir = outputDir || (await getRandomDirectory())
 
-  console.log(`imagetoVideoBase64 called with: ${JSON.stringify({
-    inputImageInBase64: inputImageInBase64?.slice(0, 50),
-    outputFilePath,
-    width,
-    height,
-    outputVideoDurationInMs,
-    outputDir,
-    clearOutputDirAtTheEnd,
-    outputVideoFormat,
-  }, null, 2)}`)
-
   outputDir = outputDir || await getRandomDirectory();
 
   // Decode the Base64 image and write it to a temporary file.
@@ -73,18 +62,20 @@ export async function imageToVideoBase64({
     });
   });
 
-  const originalWidth = inputImageDetails.streams[0].width;
-  const originalHeight = inputImageDetails.streams[0].height;
+  const originalWidth = inputImageDetails.streams[0].width || width;
+  const originalHeight = inputImageDetails.streams[0].height || height;
   const originalAspect = originalWidth / originalHeight;
   const targetAspect = width / height;
   let cropWidth, cropHeight;
 
   if (originalAspect > targetAspect) {
     // Crop width to match target aspect
+    // console.log("imageToVideoBase64 case 1")
     cropHeight = originalHeight;
     cropWidth = Math.floor(cropHeight * targetAspect);
   } else {
     // Crop height to match target aspect
+    // console.log("imageToVideoBase64 case 2")
     cropWidth = originalWidth;
     cropHeight = Math.floor(cropWidth / targetAspect);
   }
@@ -95,16 +86,52 @@ export async function imageToVideoBase64({
   // we want to create a smooth Ken Burns effect
   const durationInSeconds = outputVideoDurationInMs / 1000;
   const framesTotal = durationInSeconds * fps;
-  const startZoom = 1;
-  const endZoom = 1 + zoomInRatePerSecond * durationInSeconds;
+
   const xCenter = `iw/2-(iw/zoom/2)`;
   const yCenter = `ih/2-(ih/zoom/2)`;
 
-  // Process the image to video conversion using ffmpeg.
+  const startZoom = 1;
+  const endZoom = 1 + zoomInRatePerSecond * durationInSeconds;
+  
+  const zoomDurationFrames = Math.ceil(durationInSeconds * fps); // Total frames for the video
 
+  const videoFilters = [
+    `crop=${cropWidth}:${cropHeight}:${(originalWidth - cropWidth) / 2}:${(originalHeight - cropHeight) / 2}`,
+    `zoompan=z='min(zoom+${(endZoom - startZoom) / framesTotal}, ${endZoom})':x='${xCenter}':y='${yCenter}':d=${zoomDurationFrames}`
+  ].join(',');
+
+  /*
+  console.log(`imagetoVideoBase64 called with: ${JSON.stringify({
+    inputImageInBase64: inputImageInBase64?.slice(0, 50),
+    outputFilePath,
+    width,
+    height,
+    outputVideoDurationInMs,
+    outputDir,
+    clearOutputDirAtTheEnd,
+    outputVideoFormat,
+    originalWidth,
+    originalHeight,
+    originalAspect,
+    targetAspect,
+    cropHeight,
+    cropWidth,
+    durationInSeconds,
+    framesTotal,
+    xCenter,
+    yCenter,
+    startZoom,
+    endZoom,
+    zoomDurationFrames,
+    videoFilters,
+  }, null, 2)}`)
+  */
+ 
+  // Process the image to video conversion using ffmpeg.
   await new Promise<void>((resolve, reject) => {
     ffmpeg(inputImagePath)
-      .inputOptions(['-loop 1'])
+      // this is disabled to avoid repeating the zoom-in multiple times
+      // .inputOptions(['-loop 1'])
       .outputOptions([
         `-t ${durationInSeconds}`,
         `-r ${fps}`,
@@ -113,7 +140,7 @@ export async function imageToVideoBase64({
         '-tune stillimage',
         '-pix_fmt yuv420p'
       ])
-      .videoFilters(`zoompan=z='zoom+${(endZoom - startZoom) / framesTotal}':x='${xCenter}':y='${yCenter}':d=1`)
+      .videoFilters(videoFilters)
       .on('start', commandLine => console.log('imageToVideoBase64: Spawned Ffmpeg with command: ' + commandLine))
       .on('end', () => resolve())
       .on('error', err => reject(err))

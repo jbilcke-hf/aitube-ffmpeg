@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Collection of useful FFmpeg utilities for NodeJS. Used by AiTube.at",
   "scripts": {
     "patch": "cp -f patch.js node_modules/fluent-ffmpeg/index.js",
