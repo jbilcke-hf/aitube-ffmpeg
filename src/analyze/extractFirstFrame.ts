@@ -21,6 +21,10 @@ export async function extractFirstFrame({
   outputFormat?: "jpeg" | "png" | "webp"
 
 }) {
+  if (!inputVideo) {
+    throw new Error(`inputVideo must be a file path or a base64 data-uri`);
+  }
+
   // Validate output format
   if (!validFormats.includes(outputFormat)) {
     throw new Error(`Invalid output format. Choose one of: ${validFormats.join(', ')}`);

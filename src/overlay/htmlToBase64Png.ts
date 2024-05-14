@@ -30,51 +30,69 @@ export async function htmlToBase64Png({
   const browser = await puppeteer.launch({
     headless: true,
 
+    // for macOS do this (yeah.. with the "no quarantine"..)
+    // brew install chromium --no-quarantine
+    // and:
+    // which chromium
+    // to detect where the executable path is
+
     // apparently we need those, see:
     // https://unix.stackexchange.com/questions/694734/puppeteer-in-alpine-docker-with-chromium-headless-dosent-seems-to-work
-    executablePath: '/usr/bin/chromium-browser',
+    // https://stackoverflow.com/questions/59979188/error-failed-to-launch-the-browser-process-puppeteer
+    executablePath:
+    os.type() === "Darwin"
+    ? '/opt/homebrew/bin/chromium'
+    : '/usr/bin/chromium-browser',
+
     args: [
-      '--no-sandbox',
+      '--no-sandbox', // for alpine
       '--headless',
+      '--no-zygote',
+      '--single-process',
       '--disable-gpu',
       '--disable-dev-shm-usage'
     ]
   })
 
-  const page = await browser.newPage()
-
-  page.setViewport({
-    width,
-    height,
-  })
-
   try {
-    await page.setContent(html)
+    const page = await browser.newPage()
 
-    const content = await page.$("body")
-
-    if (!content) { throw new Error (`coudln't find body content`) }
-    
-    const buffer = await content.screenshot({
-      path: outputImagePath,
-      omitBackground: true,
-      captureBeyondViewport: false,
-
-      // we must keep PNG here, if we want transparent backgrounds
-      type: "png",
-
-      // we should leave it to binary (the default value) if we save to a file
-      // encoding: "binary", // "base64",
+    page.setViewport({
+      width,
+      height,
     })
 
-    return {
-      filePath: outputImagePath,
-      buffer
+    try {
+      await page.setContent(html)
+
+      const content = await page.$("body")
+
+      if (!content) { throw new Error (`coudln't find body content`) }
+      
+      const buffer = await content.screenshot({
+        path: outputImagePath,
+        omitBackground: true,
+        captureBeyondViewport: false,
+
+        // we must keep PNG here, if we want transparent backgrounds
+        type: "png",
+
+        // we should leave it to binary (the default value) if we save to a file
+        // encoding: "binary", // "base64",
+      })
+
+      return {
+        filePath: outputImagePath,
+        buffer
+      }
+    } catch (err) {
+      throw err
+    } finally {
+      await page.close()
     }
   } catch (err) {
     throw err
   } finally {
-    await page.close()
     await browser.close()
   }
 };
