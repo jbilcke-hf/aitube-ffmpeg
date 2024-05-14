@@ -48,7 +48,7 @@ export async function htmlToBase64Png({
       '--no-sandbox', // for alpine
       '--headless',
       '--no-zygote',
-      '--single-process',
+      // '--single-process',
       '--disable-gpu',
       '--disable-dev-shm-usage'
     ]
