@@ -49,7 +49,11 @@ export async function concatenateAudio({
   }
 
   if (audioFilePaths.length === 1) {
-    throw new Error("concatenating a single audio file path is not implemented yet")
+    const outputFilePath = audioFilePaths[0]
+
+    // console.log("  |- there is only one track! so.. returning that")
+    const { durationInSec } = await getMediaInfo(outputFilePath)
+    return { filepath: outputFilePath, durationInSec }
   }
   
   try {
@@ -86,7 +90,7 @@ export async function concatenateAudio({
       prevLabel
     })
     */
-
+ 
     let cmd: FfmpegCommand = ffmpeg() // .outputOptions('-vn');
 
     audioFilePaths.forEach((audio, i) => {
